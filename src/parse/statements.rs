@@ -1,5 +1,6 @@
 use super::Parser;
-use crate::ast::{Block, Expression, ExpressionNode, NameNode, Statement, StatementNode};
+use crate::ast::{Block, Expression, ExpressionNode, Statement, StatementNode};
+use crate::names::NameNode;
 use crate::token::Token;
 
 impl Parser<'_> {
@@ -128,7 +129,7 @@ impl Parser<'_> {
     fn expression_or_assignment(&mut self, expr: Expression) -> Statement {
         let mut span = expr.span;
         let node = match expr.node {
-            ExpressionNode::Name(name) if self.consume(Token::ColonEqual).is_some() => {
+            ExpressionNode::NamePart(name) if self.consume(Token::ColonEqual).is_some() => {
                 let body = self.parse_expression();
                 span += body.span;
                 StatementNode::Assignment(name, body)

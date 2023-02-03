@@ -1,4 +1,5 @@
 mod parse;
+mod resolve;
 
 use crate::source::Span;
 use crate::{Db, Messages};
@@ -106,6 +107,7 @@ pub enum LabelKind {
     Help,
 }
 
+#[must_use]
 pub struct MessageMaker<'a> {
     db: &'a dyn Db,
     span: Span,

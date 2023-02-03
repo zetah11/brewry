@@ -3,7 +3,9 @@ use salsa::DbWithJar;
 
 pub mod ast;
 pub mod messages;
+pub mod names;
 pub mod parse;
+pub mod resolve;
 pub mod source;
 pub mod token;
 
@@ -11,8 +13,11 @@ pub mod token;
 pub struct Jar(
     crate::ast::Declaration,
     crate::ast::Declarations,
-    crate::ast::Name,
+    crate::names::NamePart,
+    crate::names::Name,
+    crate::names::NamesWithin,
     crate::parse::parse,
+    crate::resolve::names_within,
     crate::source::Source,
     crate::token::lex,
     crate::Messages,

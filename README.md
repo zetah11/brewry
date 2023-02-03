@@ -2,7 +2,7 @@
 
 Object orientation for the sleepy developer.
 
-    variant Name is Stringable
+    variant NamePart is Stringable
 
         variant Identifier
             var name String

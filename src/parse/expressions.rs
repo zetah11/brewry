@@ -1,5 +1,6 @@
 use super::Parser;
-use crate::ast::{Expression, ExpressionNode, Name, NameNode};
+use crate::ast::{Expression, ExpressionNode};
+use crate::names::{NameNode, NamePart};
 use crate::token::Token;
 
 impl Parser<'_> {
@@ -57,7 +58,7 @@ impl Parser<'_> {
                     span,
                 };
             } else if self.consume(Token::Dot).is_some() {
-                let (node, closer) = self.parse_name(|_, name, _| ExpressionNode::Name(name));
+                let (node, closer) = self.parse_name(|_, name, _| ExpressionNode::NamePart(name));
 
                 let span = expr.span + closer;
 
@@ -78,14 +79,14 @@ impl Parser<'_> {
         let (node, span) = match self.this_one() {
             Some((Token::ValueName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Value(name.clone()));
-                (ExpressionNode::Name(name), *span)
+                let name = NamePart::new(self.db, NameNode::Value(name.clone()));
+                (ExpressionNode::NamePart(name), *span)
             }
 
             Some((Token::TypeName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Type(name.clone()));
-                (ExpressionNode::Name(name), *span)
+                let name = NamePart::new(self.db, NameNode::Type(name.clone()));
+                (ExpressionNode::NamePart(name), *span)
             }
 
             Some((Token::Number(number), span)) => {

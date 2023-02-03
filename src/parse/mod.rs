@@ -5,8 +5,9 @@ mod statements;
 mod types;
 
 use self::matcher::Matcher;
-use crate::ast::{Declarations, Name, NameNode};
+use crate::ast::Declarations;
 use crate::messages::MessageMaker;
+use crate::names::{NameNode, NamePart};
 use crate::source::{Source, Span};
 use crate::token::{lex, Token};
 use crate::Db;
@@ -86,29 +87,29 @@ impl<'a> Parser<'a> {
 
     fn parse_name<T, F>(&mut self, f: F) -> (T, Span)
     where
-        F: FnOnce(&mut Parser<'a>, Name, Span) -> T,
+        F: FnOnce(&mut Parser<'a>, NamePart, Span) -> T,
     {
         match self.this_one() {
             Some((Token::ValueName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Value(name.clone()));
+                let name = NamePart::new(self.db, NameNode::Value(name.clone()));
                 (f(self, name, *span), *span)
             }
 
             Some((Token::TypeName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Type(name.clone()));
+                let name = NamePart::new(self.db, NameNode::Type(name.clone()));
                 (f(self, name, *span), *span)
             }
 
             Some((_, span)) => {
-                let name = Name::new(self.db, NameNode::Invalid);
+                let name = NamePart::new(self.db, NameNode::Invalid);
                 (f(self, name, *span), *span)
             }
 
             None => {
                 let span = self.closest_span();
-                let name = Name::new(self.db, NameNode::Invalid);
+                let name = NamePart::new(self.db, NameNode::Invalid);
                 (f(self, name, span), span)
             }
         }

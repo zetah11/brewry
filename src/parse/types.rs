@@ -1,5 +1,6 @@
 use super::Parser;
-use crate::ast::{Name, NameNode, Type, TypeNode};
+use crate::ast::{Type, TypeNode};
+use crate::names::{NameNode, NamePart};
 use crate::token::Token;
 
 impl Parser<'_> {
@@ -81,7 +82,7 @@ impl Parser<'_> {
                         NameNode::Invalid => this.at(span).parse_expected_type_name(None),
                     }
 
-                    TypeNode::Name(name)
+                    TypeNode::NamePart(name)
                 });
 
                 let span = ty.span + closer;
@@ -102,8 +103,8 @@ impl Parser<'_> {
         let (node, span) = match self.this_one() {
             Some((Token::TypeName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Type(name.clone()));
-                (TypeNode::Name(name), *span)
+                let name = NamePart::new(self.db, NameNode::Type(name.clone()));
+                (TypeNode::NamePart(name), *span)
             }
 
             Some((Token::OpenParen, opener)) => {

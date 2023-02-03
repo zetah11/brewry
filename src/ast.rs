@@ -1,17 +1,5 @@
+use crate::names::NamePart;
 use crate::source::Span;
-
-#[salsa::interned]
-pub struct Name {
-    #[return_ref]
-    pub node: NameNode,
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum NameNode {
-    Type(String),
-    Value(String),
-    Invalid,
-}
 
 #[salsa::tracked]
 pub struct Declarations {
@@ -44,7 +32,7 @@ pub enum DeclarationNode {
 
     Function {
         name: DeclarationName,
-        args: Vec<(Name, Type)>,
+        args: Vec<(NamePart, Type)>,
         return_type: Type,
         body: Option<Block>,
     },
@@ -62,13 +50,13 @@ pub enum DeclarationNode {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DeclarationName {
     pub node: DeclarationNameNode,
-    pub prefix: Option<Name>,
+    pub prefix: Option<NamePart>,
     pub span: Span,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum DeclarationNameNode {
-    Identifier(Name),
+    Identifier(NamePart),
     Quoted(String),
     Invalid,
 }
@@ -81,8 +69,8 @@ pub struct Type {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TypeNode {
-    Name(Name),
-    Field(Box<Type>, Name),
+    NamePart(NamePart),
+    Field(Box<Type>, NamePart),
 
     Applied(Box<Type>, Vec<Type>),
 
@@ -113,10 +101,10 @@ pub struct Statement {
 pub enum StatementNode {
     Expression(Expression),
 
-    Variable(Name, Type, Expression),
-    Constant(Name, Type, Expression),
+    Variable(NamePart, Type, Expression),
+    Constant(NamePart, Type, Expression),
 
-    Assignment(Name, Expression),
+    Assignment(NamePart, Expression),
 
     Return(Expression),
 
@@ -136,7 +124,7 @@ pub enum ExpressionNode {
     Call(Box<Expression>, Vec<Expression>),
     Field(Box<Expression>, String),
 
-    Name(Name),
+    NamePart(NamePart),
     Number(String),
     String(String),
     Unit,

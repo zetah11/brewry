@@ -1,8 +1,9 @@
 use super::Parser;
 use crate::ast::{
-    Declaration, DeclarationName, DeclarationNameNode, DeclarationNode, Declarations, Name,
-    NameNode, Type, TypeNode,
+    Declaration, DeclarationName, DeclarationNameNode, DeclarationNode, Declarations, Type,
+    TypeNode,
 };
+use crate::names::{NameNode, NamePart};
 use crate::source::Span;
 use crate::token::Token;
 
@@ -201,13 +202,13 @@ impl Parser<'_> {
         match self.this_one() {
             Some((Token::TypeName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Type(name.clone()));
+                let name = NamePart::new(self.db, NameNode::Type(name.clone()));
                 (DeclarationNameNode::Identifier(name), *span)
             }
 
             Some((Token::ValueName(name), span)) => {
                 let _ = self.next();
-                let name = Name::new(self.db, NameNode::Value(name.clone()));
+                let name = NamePart::new(self.db, NameNode::Value(name.clone()));
                 (DeclarationNameNode::Identifier(name), *span)
             }
 
@@ -242,13 +243,13 @@ impl Parser<'_> {
         types
     }
 
-    fn parameters(&mut self) -> Vec<(Name, Type)> {
+    fn parameters(&mut self) -> Vec<(NamePart, Type)> {
         let mut names = Vec::new();
         let mut types = Vec::new();
 
         while let Some((Token::ValueName(name), _span)) = self.this_one() {
             let _ = self.next();
-            let name = Name::new(self.db, NameNode::Value(name.clone()));
+            let name = NamePart::new(self.db, NameNode::Value(name.clone()));
             names.push(name);
 
             if self.matches(Self::TYPE_STARTS).is_some() {
