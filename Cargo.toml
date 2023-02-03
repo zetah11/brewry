@@ -1,0 +1,10 @@
+[package]
+name = "brewry"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+logos = "0.12.1"
+salsa = { git = "https://github.com/salsa-rs/salsa", branch = "master", package = "salsa-2022" }

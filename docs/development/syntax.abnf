@@ -1,0 +1,58 @@
+top-level       = *declaration
+
+; Declaration ------------------------------------------------------------------
+declarations    = *declaration ["private" *declaration] "end"
+
+declaration     = class / variant / function / variable
+class           = "class" decl-type-name inherits declarations
+variant         = "variant" decl-type-name inherits declarations
+functions       = "function" decl-value-name "(" parameters ")" [type] [block]
+variable        = "var" decl-value-name type [":=" expr]
+
+decl-type-name  = TYPE_NAME / STRING / TYPE_NAME "." (TYPE_NAME / STRING)
+decl-value-name = VALUE_NAME / STRING / TYPE_NAME "." (VALUE_NAME / STRING)
+
+inherits        = ["is" type *("," type)]
+
+parameters      = [annotated-names *("," annotated-names) [","]]
+annotated-names = (NAME *("," NAME)) type
+
+; Statements -------------------------------------------------------------------
+block           = 1*statement "end"
+
+statement       = "null"
+statement      =/ "return" [expr]
+statement      =/ "let" VALUE_NAME type ":=" expr
+statement      =/ "var" VALUE_NAME type ":=" expr
+statement      =/ VALUE_NAME ":=" expr
+statement      =/ expr
+
+; Expressions ------------------------------------------------------------------
+expr            = reference-expr
+
+prefix-expr     = "&" prefix-expr / long-expr
+
+long-expr       = call-expr / field-expr / simple-expr
+call-expr       = long-expr "(" expr-list ")"
+field-expr      = long-expr "." VALUE_NAME
+
+simple-expr     = VALUE_NAME / TYPE_NAME / NUMBER / STRING
+simple-expr    =/ "(" expr ")"
+
+expr-list       = [expr *("," expr) [","]]
+
+; Types ------------------------------------------------------------------------
+type            = prefix-type
+
+prefix-type     = "&" prefix-type
+prefix-type    =/ "(" type-list ")" prefix-type
+prefix-type    =/ long-type
+
+long-type       = applied-type / field-type / simple-type
+
+applied-type    = long-type "(" type-list ")"
+field-type      = long-type "." TYPE_NAME
+
+simple-type     = TYPE_NAME / "(" type ")"
+
+type-list       = [type *("," type) [","]]
