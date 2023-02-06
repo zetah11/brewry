@@ -11,7 +11,7 @@ Object orientation for the sleepy developer.
             class Type end
         end
 
-        variant Invalid
+        class Invalid end
     
         function to_string(this &) String
             case this
