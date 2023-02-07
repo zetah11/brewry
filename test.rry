@@ -1,6 +1,6 @@
 class A is B.C end
 
-class B is A
+variant B is A
 
     class C end
 

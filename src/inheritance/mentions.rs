@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::names::Name;
 use crate::resolution::resolve_names;
-use crate::rst::{Class, Type, TypeNode};
+use crate::rst::{Class, ClassKind, Type, TypeNode};
 use crate::source::Source;
 use crate::Db;
 
@@ -45,7 +45,18 @@ impl MentionLocator {
             Self::type_mentions(&mut set, ty);
         }
 
-        assert!(self.inherits.insert(*name, set).is_none());
+        // Nested items also inherit from outer variants
+        if let ClassKind::Variant = item.kind {
+            for nested in item.fields.classes.iter() {
+                self.inherits.entry(*nested).or_default().insert(*name);
+            }
+        }
+
+        if let Some(inherits) = self.inherits.get_mut(name) {
+            inherits.extend(set);
+        } else {
+            self.inherits.insert(*name, set);
+        }
     }
 
     fn type_mentions(into: &mut HashSet<Name>, ty: &Type) {
