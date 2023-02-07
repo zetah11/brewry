@@ -5,6 +5,7 @@ use crate::token::Token;
 
 impl Parser<'_> {
     pub const STATEMENT_START: &[Token] = &[
+        Token::Null,
         Token::Return,
         Token::Let,
         Token::Var,
@@ -57,19 +58,19 @@ impl Parser<'_> {
                 let _ = self.next();
                 let (name, _) = self.parse_name(|this, name, span| {
                     match name.node(this.db) {
-                        NameNode::Value(..) => {}
+                        NameNode::Value(_) => {}
                         NameNode::Type(name) => {
                             this.at(span).parse_expected_value_name(Some(name.as_str()))
                         }
+
                         NameNode::Invalid => this.at(span).parse_expected_value_name(None),
                     }
-
                     name
                 });
 
                 let ty = self.parse_type();
 
-                let _ = self.consume(Token::ColonEqual).unwrap_or({
+                let _ = self.consume(Token::ColonEqual).unwrap_or_else(|| {
                     let span = self.closest_span();
                     self.at(span).parse_expected_assignment();
                     span
@@ -89,7 +90,7 @@ impl Parser<'_> {
                 let _ = self.next();
                 let (name, _) = self.parse_name(|this, name, span| {
                     match name.node(this.db) {
-                        NameNode::Value(..) => {}
+                        NameNode::Value(_) => {}
                         NameNode::Type(name) => {
                             this.at(span).parse_expected_value_name(Some(name.as_str()))
                         }
@@ -101,7 +102,7 @@ impl Parser<'_> {
 
                 let ty = self.parse_type();
 
-                let _ = self.consume(Token::ColonEqual).unwrap_or({
+                let _ = self.consume(Token::ColonEqual).unwrap_or_else(|| {
                     let span = self.closest_span();
                     self.at(span).parse_expected_assignment();
                     span
@@ -128,17 +129,12 @@ impl Parser<'_> {
 
     fn expression_or_assignment(&mut self, expr: Expression) -> Statement {
         let mut span = expr.span;
-        let node = match expr.node {
-            ExpressionNode::NamePart(name) if self.consume(Token::ColonEqual).is_some() => {
-                let body = self.parse_expression();
-                span += body.span;
-                StatementNode::Assignment(name, body)
-            }
-
-            node => StatementNode::Expression(Expression {
-                node,
-                span: expr.span,
-            }),
+        let node = if self.consume(Token::ColonEqual).is_some() {
+            let body = self.parse_expression();
+            span += body.span;
+            StatementNode::Assignment(expr, body)
+        } else {
+            StatementNode::Expression(expr)
         };
 
         Statement { node, span }

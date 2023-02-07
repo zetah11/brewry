@@ -14,8 +14,9 @@ decl-value-name = VALUE_NAME / STRING / TYPE_NAME "." (VALUE_NAME / STRING)
 
 inherits        = ["is" type *("," type)]
 
-parameters      = [annotated-names *("," annotated-names) [","]]
+parameters      = [this / [this ","] annotated-names *("," annotated-names) [","]]
 annotated-names = (NAME *("," NAME)) type
+this            = "this" / this "&"
 
 ; Statements -------------------------------------------------------------------
 block           = 1*statement "end"
@@ -30,13 +31,13 @@ statement      =/ expr
 ; Expressions ------------------------------------------------------------------
 expr            = reference-expr
 
-prefix-expr     = "&" prefix-expr / long-expr
+postfix-expr    = long-expr ["&"]
 
 long-expr       = call-expr / field-expr / simple-expr
 call-expr       = long-expr "(" expr-list ")"
 field-expr      = long-expr "." VALUE_NAME
 
-simple-expr     = VALUE_NAME / TYPE_NAME / NUMBER / STRING
+simple-expr     = VALUE_NAME / TYPE_NAME / NUMBER / STRING / "this"
 simple-expr    =/ "(" expr ")"
 
 expr-list       = [expr *("," expr) [","]]

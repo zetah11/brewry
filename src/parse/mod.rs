@@ -85,6 +85,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Parse a name token (type or value). May produce a `NameNode::Invalid`.
     fn parse_name<T, F>(&mut self, f: F) -> (T, Span)
     where
         F: FnOnce(&mut Parser<'a>, NamePart, Span) -> T,

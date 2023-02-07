@@ -1,40 +1,35 @@
-use crate::names::NamePart;
+//! Like the AST, but with most names (except fields) resolved.
+
+use crate::names::{Name, NamePart};
 use crate::source::Span;
 
 #[salsa::tracked]
-pub struct Declarations {
-    #[return_ref]
-    pub declarations: Vec<Declaration>,
+pub struct Items {
+    pub classes: Vec<Class>,
+    pub values: Vec<Value>,
 }
 
-#[salsa::tracked]
-pub struct Declaration {
-    #[return_ref]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Class {
     pub name: DeclarationName,
-    #[return_ref]
-    pub node: DeclarationNode,
+    pub kind: ClassKind,
+    pub items: Items,
+    pub inherits: Vec<Type>,
     pub span: Span,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum DeclarationNode {
-    Class {
-        public: Vec<Declaration>,
-        private: Vec<Declaration>,
-        inherits: Vec<Type>,
-    },
+pub struct Value {
+    pub name: DeclarationName,
+    pub node: ValueNode,
+    pub span: Span,
+}
 
-    Variant {
-        public: Vec<Declaration>,
-        private: Vec<Declaration>,
-        inherits: Vec<Type>,
-    },
-
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ValueNode {
     Function {
-        /// `None` if the function does not take a `this` argument; `Some(n)` if
-        /// it does, where `n` is the number of references it is behind.
         this: Option<usize>,
-        args: Vec<(NamePart, Type)>,
+        args: Vec<(Name, Type)>,
         return_type: Type,
         body: Option<Block>,
     },
@@ -45,20 +40,16 @@ pub enum DeclarationNode {
     },
 }
 
-/// A declaration name is possibly a prefix (the name of the inherited class)
-/// plus a function name. The function name may be quoted (in which case it
-/// refers to a builtin, like an operator).
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct DeclarationName {
-    pub node: DeclarationNameNode,
-    pub prefix: Option<NamePart>,
-    pub span: Span,
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ClassKind {
+    Class,
+    Variant,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum DeclarationNameNode {
-    Identifier(NamePart),
-    Quoted(String),
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DeclarationName {
+    Name(Name),
+    Field(Name, NamePart),
     Invalid,
 }
 
@@ -70,15 +61,13 @@ pub struct Type {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TypeNode {
-    Name(NamePart),
+    Name(Name),
     Field(Box<Type>, NamePart),
 
     Applied(Box<Type>, Vec<Type>),
 
-    /// A function type `() T` or `(T, U) V`.
     Function(Vec<Type>, Box<Type>),
 
-    /// A reference.
     Reference(Box<Type>),
 
     Int,
@@ -90,7 +79,10 @@ pub enum TypeNode {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Block(pub Vec<Statement>);
+pub struct Block {
+    pub declarations: Vec<(Name, Type)>,
+    pub statements: Vec<Statement>,
+}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Statement {
@@ -101,16 +93,10 @@ pub struct Statement {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum StatementNode {
     Expression(Expression),
-
-    Variable(NamePart, Type, Expression),
-    Constant(NamePart, Type, Expression),
-
     Assignment(Expression, Expression),
-
     Return(Expression),
 
     Null,
-    Invalid,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -126,7 +112,7 @@ pub enum ExpressionNode {
     Call(Box<Expression>, Vec<Expression>),
     Field(Box<Expression>, NamePart),
 
-    Name(NamePart),
+    Name(Name),
     Number(String),
     String(String),
     This,

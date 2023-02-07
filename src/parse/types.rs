@@ -73,6 +73,7 @@ impl Parser<'_> {
                     span,
                 };
             } else if self.consume(Token::Dot).is_some() {
+                let span = ty.span;
                 let (node, closer) = self.parse_name(|this, name, span| {
                     match name.node(this.db) {
                         NameNode::Type(..) => {}
@@ -82,10 +83,10 @@ impl Parser<'_> {
                         NameNode::Invalid => this.at(span).parse_expected_type_name(None),
                     }
 
-                    TypeNode::NamePart(name)
+                    TypeNode::Field(Box::new(ty), name)
                 });
 
-                let span = ty.span + closer;
+                let span = span + closer;
 
                 ty = Type { node, span };
             } else {
@@ -104,14 +105,14 @@ impl Parser<'_> {
             Some((Token::TypeName(name), span)) => {
                 let _ = self.next();
                 let name = NamePart::new(self.db, NameNode::Type(name.clone()));
-                (TypeNode::NamePart(name), *span)
+                (TypeNode::Name(name), *span)
             }
 
             Some((Token::OpenParen, opener)) => {
                 let _ = self.next();
 
                 let ty = self.parse_type();
-                let _closer = self.consume(Token::CloseParen).unwrap_or({
+                let _closer = self.consume(Token::CloseParen).unwrap_or_else(|| {
                     self.at(*opener).parse_missing_paren();
                     self.closest_span()
                 });

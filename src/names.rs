@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-
-use crate::source::{Source, Span};
+use crate::source::Source;
+use crate::types::Type;
 
 #[salsa::interned]
 pub struct NamePart {
@@ -17,7 +16,9 @@ pub enum NameNode {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum NamePrefix {
+    Local(Box<NamePrefix>, usize),
     Item(Name),
+    Type(Type),
     Source(Source),
 }
 
@@ -25,16 +26,4 @@ pub enum NamePrefix {
 pub struct Name {
     pub scope: NamePrefix,
     pub name: NamePart,
-}
-
-#[salsa::tracked]
-pub struct NamesWithin {
-    #[return_ref]
-    pub names: HashMap<Name, HashSet<Name>>,
-
-    #[return_ref]
-    pub spans: HashMap<Name, Span>,
-
-    #[return_ref]
-    pub public: HashSet<Name>,
 }

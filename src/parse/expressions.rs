@@ -12,26 +12,27 @@ impl Parser<'_> {
     ];
 
     /// ```abnf
-    /// expr = prefix-expr
+    /// expr = postfix-expr
     /// ```
     pub fn parse_expression(&mut self) -> Expression {
         self.prefix_expr()
     }
 
     /// ```abnf
-    /// prefix-expr = "&" prefix-expr / long-expr
+    /// postfix-expr = long-expr ["&"]
     /// ```
     fn prefix_expr(&mut self) -> Expression {
-        if let Some(opener) = self.consume(Token::Ampersand) {
-            let expr = Box::new(self.prefix_expr());
-            let span = opener + expr.span;
+        let expr = self.long_expr();
+
+        if let Some(end) = self.consume(Token::Ampersand) {
+            let span = expr.span + end;
 
             Expression {
-                node: ExpressionNode::Reference(expr),
+                node: ExpressionNode::Reference(Box::new(expr)),
                 span,
             }
         } else {
-            self.long_expr()
+            expr
         }
     }
 
@@ -58,9 +59,12 @@ impl Parser<'_> {
                     span,
                 };
             } else if self.consume(Token::Dot).is_some() {
-                let (node, closer) = self.parse_name(|_, name, _| ExpressionNode::NamePart(name));
+                let span = expr.span;
 
-                let span = expr.span + closer;
+                let (node, closer) =
+                    self.parse_name(|_, name, _| ExpressionNode::Field(Box::new(expr), name));
+
+                let span = span + closer;
 
                 expr = Expression { node, span };
             } else {
@@ -80,13 +84,13 @@ impl Parser<'_> {
             Some((Token::ValueName(name), span)) => {
                 let _ = self.next();
                 let name = NamePart::new(self.db, NameNode::Value(name.clone()));
-                (ExpressionNode::NamePart(name), *span)
+                (ExpressionNode::Name(name), *span)
             }
 
             Some((Token::TypeName(name), span)) => {
                 let _ = self.next();
                 let name = NamePart::new(self.db, NameNode::Type(name.clone()));
-                (ExpressionNode::NamePart(name), *span)
+                (ExpressionNode::Name(name), *span)
             }
 
             Some((Token::Number(number), span)) => {
@@ -99,11 +103,16 @@ impl Parser<'_> {
                 (ExpressionNode::String(string.clone()), *span)
             }
 
+            Some((Token::This, span)) => {
+                let _ = self.next();
+                (ExpressionNode::This, *span)
+            }
+
             Some((Token::OpenParen, opener)) => {
                 let _ = self.next();
 
                 let expr = self.parse_expression();
-                let _closer = self.consume(Token::CloseParen).unwrap_or({
+                let _closer = self.consume(Token::CloseParen).unwrap_or_else(|| {
                     self.at(*opener).parse_missing_paren();
                     expr.span
                 });

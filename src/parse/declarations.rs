@@ -40,7 +40,7 @@ impl Parser<'_> {
     }
 
     fn declaration(&mut self) -> Option<Declaration> {
-        let (node, span) = match self.this_one() {
+        let (name, node, span) = match self.this_one() {
             Some((Token::Class, opener)) => {
                 let _ = self.next();
                 let name = self.declaration_name();
@@ -59,13 +59,12 @@ impl Parser<'_> {
 
                 let span = *opener + end;
                 let node = DeclarationNode::Class {
-                    name,
                     public,
                     private,
                     inherits,
                 };
 
-                (node, span)
+                (name, node, span)
             }
 
             Some((Token::Variant, opener)) => {
@@ -86,19 +85,18 @@ impl Parser<'_> {
 
                 let span = *opener + end;
                 let node = DeclarationNode::Variant {
-                    name,
                     public,
                     private,
                     inherits,
                 };
 
-                (node, span)
+                (name, node, span)
             }
 
             Some((Token::Function, opener)) => {
                 let _ = self.next();
                 let name = self.declaration_name();
-                let args = self
+                let (this, args) = self
                     .consume(Token::OpenParen)
                     .map(|opener| {
                         let parameters = self.parameters();
@@ -137,13 +135,13 @@ impl Parser<'_> {
 
                 let span = *opener + end;
                 let node = DeclarationNode::Function {
-                    name,
+                    this,
                     args,
                     return_type,
                     body,
                 };
 
-                (node, span)
+                (name, node, span)
             }
 
             Some((Token::Var, opener)) => {
@@ -156,9 +154,9 @@ impl Parser<'_> {
                     .map(|_| self.parse_expression());
 
                 let span = *opener + self.closest_span();
-                let node = DeclarationNode::Variable { name, anno, body };
+                let node = DeclarationNode::Variable { anno, body };
 
-                (node, span)
+                (name, node, span)
             }
 
             Some((_, span)) => {
@@ -173,7 +171,7 @@ impl Parser<'_> {
             }
         };
 
-        Some(Declaration::new(self.db, node, span))
+        Some(Declaration::new(self.db, name, node, span))
     }
 
     fn declaration_name(&mut self) -> DeclarationName {
@@ -243,9 +241,26 @@ impl Parser<'_> {
         types
     }
 
-    fn parameters(&mut self) -> Vec<(NamePart, Type)> {
+    /// ```abnf
+    /// parameters      = [this / [this ","] annotated-names *("," annotated-names) [","]]
+    /// annotated-names = (NAME *("," NAME)) type
+    /// this            = "this" / this "&"
+    /// ```
+    fn parameters(&mut self) -> (Option<usize>, Vec<(NamePart, Type)>) {
         let mut names = Vec::new();
         let mut types = Vec::new();
+
+        let mut this = None;
+
+        if self.consume(Token::This).is_some() {
+            let mut n = 0;
+            while self.consume(Token::Ampersand).is_some() {
+                n += 1;
+            }
+
+            this = Some(n);
+            let _ = self.consume(Token::Comma);
+        }
 
         while let Some((Token::ValueName(name), _span)) = self.this_one() {
             let _ = self.next();
@@ -262,6 +277,6 @@ impl Parser<'_> {
             let _ = self.consume(Token::Comma);
         }
 
-        names.into_iter().zip(types).collect()
+        (this, names.into_iter().zip(types).collect())
     }
 }

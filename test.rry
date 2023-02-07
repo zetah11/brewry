@@ -1,9 +1,8 @@
-class Geebler
+var bonkle Klonkle := hookum()
 
-    function plip_plop()
-
-private
-
-    function plip_plop()
-
+function hookum() Klonkle
+    var glorgle Klonkle := hookum()
+    return glorgle
 end
+
+class Klonkle end
