@@ -5,7 +5,10 @@ use crate::source::Span;
 
 #[salsa::tracked]
 pub struct Items {
+    #[return_ref]
     pub classes: Vec<Class>,
+
+    #[return_ref]
     pub values: Vec<Value>,
 }
 

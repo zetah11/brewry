@@ -5,13 +5,12 @@ fn main() {
     let db = Database::default();
     let source = source::Source::new(&db, include_str!("../test.rry").into(), "main.rry".into());
 
-    let names = resolution::resolve_names(&db, source);
-    println!("{:?}", names.tree(&db));
-    println!("{:?}", names.mutable(&db));
+    let mentions = resolution::all_mentions(&db, source);
+    println!("{:?}", mentions.inherits(&db));
 
     println!("\n\nerrors!!!\n");
 
-    for message in resolution::resolve_names::accumulated::<Messages>(&db, source) {
+    for message in resolution::all_mentions::accumulated::<Messages>(&db, source) {
         println!("{message:?}");
     }
 }

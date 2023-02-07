@@ -1,8 +1,3 @@
-var bonkle Klonkle := hookum()
-
-function hookum() Klonkle
-    var glorgle Klonkle := hookum()
-    return glorgle
-end
-
-class Klonkle end
+class Jingle is Song end
+class Song is Sound end
+class Sound end

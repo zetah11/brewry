@@ -1,6 +1,8 @@
+mod mentions;
 mod resolve;
 mod within;
 
+pub use mentions::{all_mentions, Mentions};
 pub use resolve::{resolve_names, NameInfo};
 pub use within::{all_names_within, NamesWithin};
 
