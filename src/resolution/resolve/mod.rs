@@ -122,24 +122,20 @@ impl Resolver {
         this: &mut Contextual<Self>,
         name: &ast::DeclarationName,
     ) -> rst::DeclarationName {
-        match this.declaration_name(name) {
-            Some(name) => rst::DeclarationName::Name(name),
-            None => {
-                let scope = name
-                    .prefix
-                    .expect("`this.declaration_name` should only return `None` on prefixed names");
-                let Some(scope) = Self::resolve(this, name.span, scope) else {
-                    return rst::DeclarationName::Invalid;
-                };
+        if let Some(scope) = name.prefix {
+            let Some(scope) = Self::resolve(this, name.span, scope) else {
+                return rst::DeclarationName::Invalid;
+            };
 
-                let name = match name.node {
-                    ast::DeclarationNameNode::Identifier(ident) => ident,
-                    ast::DeclarationNameNode::Quoted(_) => todo!(),
-                    ast::DeclarationNameNode::Invalid => NamePart::new(this.db, NameNode::Invalid),
-                };
+            let name = match name.node {
+                ast::DeclarationNameNode::Identifier(ident) => ident,
+                ast::DeclarationNameNode::Quoted(_) => todo!(),
+                ast::DeclarationNameNode::Invalid => NamePart::new(this.db, NameNode::Invalid),
+            };
 
-                rst::DeclarationName::Field(scope, name)
-            }
+            rst::DeclarationName::Field(scope, name)
+        } else {
+            rst::DeclarationName::Name(this.declaration_name(name))
         }
     }
 
@@ -225,6 +221,9 @@ impl Resolver {
     /// Create a [`Name`] from the given [`rst::DeclarationName`]. This is used
     /// to unambiguously refer to scopes, even in items whose names are invalid
     /// or fields of other types (e.g. when overriding functions).
+    ///
+    /// Should produce the same result as `this.declaration_name` on the
+    /// corresponding `ast::DeclarationName`.
     fn make_scope_name(_this: &mut Contextual<Self>, name: rst::DeclarationName) -> Name {
         match name {
             rst::DeclarationName::Name(name) => name,

@@ -53,22 +53,14 @@ impl<'a, Data> Contextual<'a, Data> {
         result
     }
 
-    fn declaration_name(&mut self, name: &DeclarationName) -> Option<Name> {
-        if name.prefix.is_some() {
-            return None;
-        }
-
-        let name = match name.node {
+    fn declaration_name(&mut self, name: &DeclarationName) -> Name {
+        match name.node {
             DeclarationNameNode::Identifier(name) => self.declare_name(name),
-
             DeclarationNameNode::Quoted(_) => todo!(),
-
             DeclarationNameNode::Invalid => {
                 self.declare_name(NamePart::new(self.db, NameNode::Invalid))
             }
-        };
-
-        Some(name)
+        }
     }
 
     fn declare_name(&mut self, name: NamePart) -> Name {

@@ -57,10 +57,10 @@ impl Declarer {
     }
 
     #[must_use]
-    fn declare(this: &mut Contextual<Self>, item: Declaration) -> Option<Name> {
+    fn declare(this: &mut Contextual<Self>, item: Declaration) -> Name {
         let name = item.name(this.db);
         let span = item.span(this.db);
-        let name = this.declaration_name(name)?;
+        let name = this.declaration_name(name);
 
         if let Some((other, _)) = this.data.names.get(&name) {
             this.at(span).resolve_duplicate_definitions(*other);
@@ -77,13 +77,13 @@ impl Declarer {
             } => {
                 this.in_scope(name, |this| {
                     for item in public {
-                        let Some(child) = Self::declare(this, *item) else { continue; };
+                        let child = Self::declare(this, *item);
                         this.data.public.insert(child);
                         Self::add_child(this, name, child);
                     }
 
                     for item in private {
-                        let Some(child) = Self::declare(this, *item) else { continue; };
+                        let child = Self::declare(this, *item);
                         Self::add_child(this, name, child);
                     }
                 });
@@ -92,7 +92,7 @@ impl Declarer {
             DeclarationNode::Variable { .. } | DeclarationNode::Function { .. } => {}
         }
 
-        Some(name)
+        name
     }
 
     fn add_child(this: &mut Contextual<Self>, parent: Name, child: Name) {
