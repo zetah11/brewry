@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::names::Name;
 use crate::resolution::resolve_names;
-use crate::rst::{Class, DeclarationName, Type, TypeNode};
+use crate::rst::{Class, Type, TypeNode};
 use crate::source::Source;
 use crate::Db;
 
@@ -19,40 +19,33 @@ pub fn all_mentions(db: &dyn Db, source: Source) -> Mentions {
     let tree = resolve_names(db, source);
     let items = tree.tree(db);
 
-    let mut mentioner = MentionLocator::new(db);
-    for item in items.classes(db) {
-        mentioner.class_mentions(item);
+    let mut mentioner = MentionLocator::new();
+    for (name, item) in items.classes(db) {
+        mentioner.class_mentions(name, item);
     }
 
     Mentions::new(db, mentioner.inherits)
 }
 
-struct MentionLocator<'a> {
-    db: &'a dyn Db,
+#[derive(Debug, Default)]
+struct MentionLocator {
     inherits: HashMap<Name, HashSet<Name>>,
 }
 
-impl<'a> MentionLocator<'a> {
-    pub fn new(db: &'a dyn Db) -> Self {
+impl MentionLocator {
+    pub fn new() -> Self {
         Self {
-            db,
             inherits: HashMap::new(),
         }
     }
 
-    pub fn class_mentions(&mut self, item: &Class) {
-        if let Some(name) = self.declaration_name(&item.name) {
-            let mut set = HashSet::new();
-            for ty in &item.inherits {
-                Self::type_mentions(&mut set, ty);
-            }
-
-            assert!(self.inherits.insert(name, set).is_none());
+    pub fn class_mentions(&mut self, name: &Name, item: &Class) {
+        let mut set = HashSet::new();
+        for ty in &item.inherits {
+            Self::type_mentions(&mut set, ty);
         }
 
-        for item in item.items.classes(self.db) {
-            self.class_mentions(item);
-        }
+        assert!(self.inherits.insert(*name, set).is_none());
     }
 
     fn type_mentions(into: &mut HashSet<Name>, ty: &Type) {
@@ -84,14 +77,6 @@ impl<'a> MentionLocator<'a> {
             | TypeNode::Boolean
             | TypeNode::Unit
             | TypeNode::Invalid => {}
-        }
-    }
-
-    fn declaration_name(&self, name: &DeclarationName) -> Option<Name> {
-        match name {
-            DeclarationName::Name(name) => Some(*name),
-            DeclarationName::Field(..) => todo!(),
-            DeclarationName::Invalid => None,
         }
     }
 }

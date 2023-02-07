@@ -1,22 +1,30 @@
 //! Like the AST, but with most names (except fields) resolved.
 
+use std::collections::HashMap;
+
 use crate::names::{Name, NamePart};
 use crate::source::Span;
 
 #[salsa::tracked]
 pub struct Items {
     #[return_ref]
-    pub classes: Vec<Class>,
+    pub classes: HashMap<Name, Class>,
 
     #[return_ref]
     pub values: Vec<Value>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Fields {
+    pub values: Vec<Value>,
+    pub classes: Vec<Name>,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Class {
     pub name: DeclarationName,
     pub kind: ClassKind,
-    pub items: Items,
+    pub fields: Fields,
     pub inherits: Vec<Type>,
     pub span: Span,
 }
