@@ -3,6 +3,7 @@ use salsa::DbWithJar;
 
 pub mod ast;
 pub mod hir;
+pub mod inheritance;
 pub mod messages;
 pub mod names;
 pub mod parse;
@@ -12,18 +13,21 @@ pub mod source;
 pub mod token;
 pub mod types;
 
+mod components;
+
 #[salsa::jar(db = Db)]
 pub struct Jar(
     crate::ast::Declaration,
     crate::ast::Declarations,
     crate::hir::Items,
+    crate::inheritance::all_mentions,
+    crate::inheritance::inherit_components,
+    crate::inheritance::Mentions,
     crate::names::NamePart,
     crate::names::Name,
     crate::parse::parse,
-    crate::resolution::all_mentions,
     crate::resolution::all_names_within,
     crate::resolution::resolve_names,
-    crate::resolution::Mentions,
     crate::resolution::NameInfo,
     crate::resolution::NamesWithin,
     crate::rst::Items,

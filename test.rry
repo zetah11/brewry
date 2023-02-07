@@ -1,3 +1,7 @@
-class Jingle is Song end
-class Song is Sound end
-class Sound end
+class A is B.C end
+
+class B is A
+
+    class C end
+
+end

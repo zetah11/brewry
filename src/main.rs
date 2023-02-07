@@ -1,16 +1,35 @@
-use brewry::{resolution, source, Messages};
+use brewry::names::NameNode;
+use brewry::{inheritance, source, Messages};
 use salsa::{Snapshot, Storage};
 
 fn main() {
     let db = Database::default();
     let source = source::Source::new(&db, include_str!("../test.rry").into(), "main.rry".into());
 
-    let mentions = resolution::all_mentions(&db, source);
-    println!("{:?}", mentions.inherits(&db));
+    let mentions = inheritance::inherit_components(&db, source);
+    println!("{mentions:?}");
+
+    for component in mentions {
+        for name in component {
+            let name = name.name(&db);
+            let name = name.node(&db);
+
+            print!(
+                "{} ",
+                match name {
+                    NameNode::Invalid => "<invalid>",
+                    NameNode::Type(name) => name.as_str(),
+                    NameNode::Value(name) => name.as_str(),
+                }
+            );
+        }
+
+        println!();
+    }
 
     println!("\n\nerrors!!!\n");
 
-    for message in resolution::all_mentions::accumulated::<Messages>(&db, source) {
+    for message in inheritance::all_mentions::accumulated::<Messages>(&db, source) {
         println!("{message:?}");
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use super::resolve_names;
 use crate::names::Name;
+use crate::resolution::resolve_names;
 use crate::rst::{Class, DeclarationName, Type, TypeNode};
 use crate::source::Source;
 use crate::Db;
