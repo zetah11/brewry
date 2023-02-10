@@ -1,31 +1,18 @@
-use brewry::names::NameNode;
-use brewry::{inheritance, source, Messages};
+use std::fs::File;
+
+use brewry::{inheritance, source, types, Messages};
 use salsa::{Snapshot, Storage};
 
 fn main() {
     let db = Database::default();
     let source = source::Source::new(&db, include_str!("../test.rry").into(), "main.rry".into());
 
-    let mentions = inheritance::inherit_components(&db, source);
-    println!("{mentions:?}");
+    let info = types::type_info(&db, source);
+    let subtypes = info.subtypes(&db);
 
-    for component in mentions {
-        for name in component {
-            let name = name.name(&db);
-            let name = name.node(&db);
-
-            print!(
-                "{} ",
-                match name {
-                    NameNode::Invalid => "<invalid>",
-                    NameNode::Type(name) => name.as_str(),
-                    NameNode::Value(name) => name.as_str(),
-                }
-            );
-        }
-
-        println!();
-    }
+    let viz = types::SubtypeVisualizer::new(&db, subtypes);
+    let mut output = File::create("subtypes.dot").unwrap();
+    dot::render(&viz, &mut output).unwrap();
 
     println!("\n\nerrors!!!\n");
 

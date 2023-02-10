@@ -1,5 +1,6 @@
 mod parse;
 mod resolve;
+mod types;
 
 use crate::source::Span;
 use crate::{Db, Messages};

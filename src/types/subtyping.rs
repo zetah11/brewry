@@ -1,8 +1,11 @@
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use super::Type;
+use crate::Db;
+
+use super::{pretty_type, Type};
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct Subtypes {
@@ -41,6 +44,21 @@ impl Subtypes {
         supers.contains(of) || supers.iter().any(|parent| self.is_subtype(parent, of))
     }
 
+    pub fn supertype_path(&self, this: &Type, of: &Type) -> Option<Vec<Type>> {
+        if this == of {
+            return Some(vec![*this]);
+        }
+
+        let supers = self.supers.get(this)?;
+        supers
+            .iter()
+            .find_map(|sup| self.supertype_path(sup, of))
+            .map(|mut path| {
+                path.push(*this);
+                path
+            })
+    }
+
     /// Returns an iterator over every supertype of the given type. The first
     /// item returned is always the type itself.
     pub fn supertypes<'a>(&'a self, of: &Type) -> Box<dyn Iterator<Item = Type> + 'a> {
@@ -61,5 +79,65 @@ impl Subtypes {
         for (a, b) in self.supers.keys().tuple_combinations() {
             assert!(!(self.is_subtype(a, b) && self.is_subtype(b, a)));
         }
+    }
+}
+
+pub struct SubtypeVisualizer<'a> {
+    db: &'a dyn Db,
+    subtypes: &'a Subtypes,
+}
+
+impl<'a> SubtypeVisualizer<'a> {
+    pub fn new(db: &'a dyn Db, subtypes: &'a Subtypes) -> Self {
+        Self { db, subtypes }
+    }
+}
+
+impl<'a> dot::Labeller<'a, Type, (Type, Type)> for SubtypeVisualizer<'a> {
+    fn graph_id(&'a self) -> dot::Id<'a> {
+        dot::Id::new("subtypes").unwrap()
+    }
+
+    fn node_id(&'a self, n: &Type) -> dot::Id<'a> {
+        dot::Id::new(format!("t{}", n.0.as_u32())).unwrap()
+    }
+
+    fn node_label(&'a self, n: &Type) -> dot::LabelText<'a> {
+        dot::LabelText::label(pretty_type(self.db, n))
+    }
+}
+
+impl<'a> dot::GraphWalk<'a, Type, (Type, Type)> for SubtypeVisualizer<'a> {
+    fn nodes(&'a self) -> dot::Nodes<'a, Type> {
+        let mut types = HashSet::new();
+        for (k, vs) in self.subtypes.supers.iter() {
+            types.insert(*k);
+
+            for v in vs.iter() {
+                types.insert(*v);
+            }
+        }
+
+        Cow::Owned(types.into_iter().collect())
+    }
+
+    fn edges(&'a self) -> dot::Edges<'a, (Type, Type)> {
+        let mut edges = HashSet::new();
+        for (k, vs) in self.subtypes.supers.iter() {
+            for v in vs.iter() {
+                // Supertypes point towards their subtypes
+                edges.insert((*v, *k));
+            }
+        }
+
+        Cow::Owned(edges.into_iter().collect())
+    }
+
+    fn source(&'a self, edge: &(Type, Type)) -> Type {
+        edge.0
+    }
+
+    fn target(&'a self, edge: &(Type, Type)) -> Type {
+        edge.1
     }
 }

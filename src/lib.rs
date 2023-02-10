@@ -34,6 +34,7 @@ pub struct Jar(
     crate::source::Source,
     crate::token::lex,
     crate::types::annotate,
+    crate::types::type_info,
     crate::types::Type,
     crate::types::TypeInfo,
     crate::Messages,

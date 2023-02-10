@@ -1,7 +1,4 @@
-class A is B.C end
-
-variant B is A
-
-    class C end
-
-end
+class D is B, C end
+class B is A end
+class C is A, B end
+class A end
